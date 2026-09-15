@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Атрибут</title>
+    <link rel="stylesheet" href="css/Атрибут.css">
+    <script src="jquery-3.7.1.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="auth.js"></script>
+    <script src="cart.js"></script>
+    <script src="modals.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <!-- Верхняя информационная панель -->
+            <div class="top-info">
+                <div class="delivery">Бесплатная доставка от 5000 ₽</div>
+                <div class="discount">При покупке от 5 разных товаров скидка 10%</div> 
+                <div class="auth">
+                    <template v-if="!currentUser">
+                        <button class="login" @click="showLoginModal">Вход</button>
+                        <button class="register" @click="showRegModal">Регистрация</button>
+                    </template>
+                    <template v-else>
+                        <span>Привет, {{ currentUser.username }}!</span>
+                        <button class="logout" @click="handleLogout">Выход</button>
+                        <button v-if="currentUser.role === 'admin'" 
+                                class="admin-panel-button" 
+                                @click="goToAdminPanel">
+                            Админ-панель
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Главный заголовок -->
+            <div class="main-header">
+                <div class="logo">
+                    <img src="pictures/gantel.png" alt="Первый Спортивный">
+                    <a class="logo-text">Атрибут</a>
+                    <img src="pictures/gantel.png" alt="Первый Спортивный">
+                </div>
+                <div class="feedback-container">
+                    <a class="desc">Обратная связь</a>
+                    <button class="feedback">Расскажите о вашей проблеме</button>
+                </div>
+                <div class="phone-make-header">
+                    <a class="phone">8-915-621-49-01</a>
+                    <button class="callback">Заказать звонок</button>    
+                </div>
+                <button class="cart" @click="showCart">
+                    <img src="pictures/cart.png" alt="Корзина" class="cart-icon">
+                    <span class="cart-count">{{ cartItems.length }}</span>
+                </button>
+            </div>
+
+            <!-- Модальные окна -->
+            <div class="modal login-modal" :class="{ active: loginModalVisible }" @click.self="hideLoginModal">
+                <div class="modal-content">
+                    <p class="login-text">Вход</p>
+                    <form class="form" @submit="handleLogin">
+                        <label for="login-username">Логин</label>
+                        <input type="text" id="login-username" name="login-username" required>
+                        
+                        <label for="login-password">Пароль</label>
+                        <input type="password" id="login-password" name="login-password" required>
+                        
+                        <button type="submit" class="submit">Войти</button>
+                    </form>
+                </div>
+            </div>
+            <div class="modal reg-modal" :class="{ active: regModalVisible }" @click.self="hideRegModal">
+                <div class="modal-content">
+                    <p class="reg-text">Регистрация</p>
+                    <form class="form" @submit="handleRegister">
+                        <label for="username">Логин</label>
+                        <input type="text" id="username" name="username" required>
+                        
+                        <label for="email">Почта</label>
+                        <input type="email" id="email" name="email" required>
+                        
+                        <label for="phone">Телефон</label>
+                        <input type="text" id="phone" name="phone" required 
+                               @input="formatPhone($event)" 
+                               placeholder="+7 (XXX) XXX-XX-XX">
+                        
+                        <label for="password">Пароль</label>
+                        <input type="password" id="password" name="password" required>
+                        
+                        <label for="confirmPassword">Подтвердите пароль</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        
+                        <button type="submit" class="submit">Зарегистрироваться</button>
+                    </form>
+                </div>
+            </div>
+            <div class="modal callback-modal">
+                <div class="modal-content">
+                    <p class="callback-text">Заказать звонок</p>
+                    <form class="form">
+                        <label for="callback-name">Ваше имя</label>
+                        <input type="text" id="callback-name" name="callback-name" required>
+                        
+                        <label for="callback-phone">Телефон</label>
+                        <input type="tel" id="callback-phone" name="callback-phone" required
+                               @input="formatPhone($event)"
+                               placeholder="+7 (XXX) XXX-XX-XX">
+                        
+                        <label for="callback-time">Удобное время для звонка</label>
+                        <input type="time" id="callback-time" name="callback-time" required>
+                        
+                        <label for="callback-message">Комментарий</label>
+                        <textarea id="callback-message" name="callback-message" rows="4"></textarea>
+                        
+                        <button type="submit" class="submit">Отправить</button>
+                    </form>
+                </div>
+            </div>
+            <div class="modal feedback-modal">
+                <div class="modal-content">
+                    <p class="feedback-text">Обратная связь</p>
+                    <form class="form">
+                        <label for="feedback-name">Ваше имя</label>
+                        <input type="text" id="feedback-name" name="feedback-name" required>
+                        
+                        <label for="feedback-email">Почта</label>
+                        <input type="email" id="feedback-email" name="feedback-email" required>
+                        
+                        <label for="feedback-message">Опишите вашу проблему</label>
+                        <textarea id="feedback-message" name="feedback-message" rows="4"></textarea>
+                        
+                        <button type="submit" class="submit">Отправить</button>
+                    </form>
+                </div>
+            </div>
+            <div class="modal cart-modal" v-if="isCartVisible">
+                <div class="modal-content">
+                    <div class="cart-header">
+                        <h2>Корзина</h2>
+                        <button class="close-cart" @click="hideCart">&times;</button>
+                    </div>
+                    <div class="cart-items">
+                        <div v-if="cartItems.length === 0" class="empty-cart">
+                            Корзина пуста
+                        </div>
+                        <div v-else v-for="(item, index) in cartItems" :key="index" class="cart-item">
+                            <img :src="item.image" :alt="item.name" class="cart-item-image">
+                            <div class="cart-item-details">
+                                <h3>{{ item.name }}</h3>
+                                <p>Цена: {{ item.price }} ₽</p>
+                                <div class="quantity-controls">
+                                    <button @click="updateQuantity(index, -1)">-</button>
+                                    <span>{{ item.quantity }}</span>
+                                    <button @click="updateQuantity(index, 1)">+</button>
+                                </div>
+                            </div>
+                            <button class="remove-item" @click="removeFromCart(index)">Удалить</button>
+                        </div>
+                    </div>
+                    <div class="cart-footer" v-if="cartItems.length > 0">
+                        <div class="cart-total">Итого: {{ formatPrice(total) }}</div>
+                        <button class="checkout-button" @click="checkout">Оформить заказ</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Секция "О нас" и слайдер -->
+            <section class="about-us">
+                <article class="products-image">
+                    <div class="slider">
+                        <div class="slide">
+                            <img src="pictures/slide1.png" alt="Слайд 1">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/slide2.png" alt="Слайд 2">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/slide3.png" alt="Слайд 3">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/slide1.png" alt="Слайд 1">
+                        </div>
+                    </div>
+                    <article class="slider-content">
+                        <div>
+                            <h2>О нас</h2>
+                            <p>Атрибут является надежным проводником в мире спорта</p>
+                            <p>У нас можно найти множество товаров,<br>
+                            которые станут отличным дополнением<br>
+                            на протяжении вашего роста</p>
+                        </div>
+                        <div>
+                            <p class="slogan">"Стань лучшей версией себя"</p>
+                        </div>
+                    </article>
+                </article>
+            </section>
+
+            <!-- Основная навигация -->
+            <nav class="main-nav">
+                <a href="#" @click.prevent="setCategory('Все')" :class="{ active: currentCategory === 'Все' && currentSubCategory === 'Все' }">Все</a>
+                <div class="dropdown">
+                    <a href="#" @click.prevent.stop="toggleDropdown('main-protein')" :class="{ active: currentCategory === 'Протеин' && currentSubCategory === 'Все' }">Протеины</a>
+                    <div class="dropdown-content" :class="{ active: dropdowns['main-protein'] }">
+                        <a href="#" @click.prevent="setSubCategory('Изолят протеина')" :class="{ active: currentSubCategory === 'Изолят протеина' }">Изолят протеина</a>
+                        <a href="#" @click.prevent="setSubCategory('Казеиновый протеин')" :class="{ active: currentSubCategory === 'Казеиновый протеин' }">Казеиновый протеин</a>
+                        <a href="#" @click.prevent="setSubCategory('Многокомпонентый протеин')" :class="{ active: currentSubCategory === 'Многокомпонентый протеин' }">Многокомпонентый протеин</a>
+                        <a href="#" @click.prevent="setSubCategory('Сывороточный протеин')" :class="{ active: currentSubCategory === 'Сывороточный протеин' }">Сывороточный протеин</a>
+                    </div>
+                </div>
+                <a href="#" @click.prevent="setCategory('BCAA')" :class="{ active: currentCategory === 'BCAA' }">BCAA</a>
+                <a href="#" @click.prevent="setCategory('Жиросжигатели')" :class="{ active: currentCategory === 'Жиросжигатели' }">Жиросжигатели</a>
+                <a href="#" @click.prevent="setCategory('Витамины')" :class="{ active: currentCategory === 'Витамины' }">Витамины</a>
+                <a href="#" @click.prevent="setCategory('Энергетики')" :class="{ active: currentCategory === 'Энергетики' }">Энергетики</a>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Боковая панель с фильтрами -->
+            <aside class="aside">
+                <div class="filters">
+                    <div class="price-filter">
+                        <h3>Фильтр по цене</h3>
+                        <div class="price-range">
+                            <label for="maxPrice">Максимальная цена: {{ selectedMaxPrice }} ₽</label>
+                            <input type="range" id="maxPrice" v-model.number="selectedMaxPrice" :min="minPrice" :max="maxPrice" @input="syncPriceRange">
+
+                            <label for="minPrice">Минимальная цена: {{ selectedMinPrice }} ₽</label>
+                            <input type="range" id="minPrice" v-model.number="selectedMinPrice" :min="minPrice" :max="maxPrice" @input="syncPriceRange">
+                        </div>
+                        <div class="price-filter-buttons">
+                            <button @click="resetPriceFilter" class="reset-button">Сбросить</button>
+                        </div>
+                    </div>
+                    <div class="stock-filter">
+                        <label>
+                            <span>Товары в наличии</span>
+                            <input type="checkbox" v-model="showOnlyInStock">
+                        </label>
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" 
+                           id="search-input" 
+                           v-model="searchQuery"
+                           placeholder="Поиск...">
+                    <button type="submit" id="search-button" @click="search">
+                        <img src="pictures/search.png" alt="Поиск">
+                    </button>
+                </div>
+                <nav class="categories">
+                    <div class="dropdown">
+                        <a href="#" @click.prevent.stop="toggleDropdown('side-protein')" :class="{ active: currentCategory === 'Протеин' && currentSubCategory === 'Все' }">Протеины</a>
+                        <div class="dropdown-content" :class="{ active: dropdowns['side-protein'] }">
+                            <a href="#" @click.prevent="setSubCategory('Изолят протеина')" :class="{ active: currentSubCategory === 'Изолят протеина' }">Изолят протеина</a>
+                            <a href="#" @click.prevent="setSubCategory('Казеиновый протеин')" :class="{ active: currentSubCategory === 'Казеиновый протеин' }">Казеиновый протеин</a>
+                            <a href="#" @click.prevent="setSubCategory('Многокомпонентый протеин')" :class="{ active: currentSubCategory === 'Многокомпонентый протеин' }">Многокомпонентый протеин</a>
+                            <a href="#" @click.prevent="setSubCategory('Сывороточный протеин')" :class="{ active: currentSubCategory === 'Сывороточный протеин' }">Сывороточный протеин</a>
+                        </div>
+                    </div>
+                    <div class="line"></div>
+                    <a href="#" @click.prevent="setCategory('BCAA')" :class="{ active: currentCategory === 'BCAA' }">BCAA</a>
+                    <div class="line"></div>
+                    <a href="#" @click.prevent="setCategory('Жиросжигатели')" :class="{ active: currentCategory === 'Жиросжигатели' }">Жиросжигатели</a>
+                    <div class="line"></div>
+                    <a href="#" @click.prevent="setCategory('Витамины')" :class="{ active: currentCategory === 'Витамины' }">Витамины</a>
+                    <div class="line"></div>
+                    <a href="#" @click.prevent="setCategory('Энергетики')" :class="{ active: currentCategory === 'Энергетики' }">Энергетики</a>
+                </nav>
+            </aside>
+
+            <!-- Основной контент с товарами -->
+            <div class="products">
+                <div class="product-cards">
+                    <article v-for="product in displayedProducts" 
+                             :key="product.id" 
+                             class="product-card"
+                             @click="openProductModal(product)">
+                        <img :src="product.image" :alt="product.name">
+                        <p>{{ product.name }}</p>
+                        <div class="price-cart-container">
+                            <div class="price">{{ formatPrice(product.price) }}</div>
+                            <button class="add-to-cart" 
+                                    @click.stop="addToCart(product.id)"
+                                    :disabled="!product.inStock">
+                                {{ !product.inStock ? 'Нет в наличии' : 'В корзину' }}
+                            </button>
+                        </div>
+                    </article>
+                </div>
+                <button v-if="canLoadMore" class="load-more" @click="loadMore">Загрузить еще</button>
+            </div>
+        </main>
+
+        <!-- Подвал сайта -->
+        <footer>
+            <div class="footer-content">
+                <div class="contact-info-left">
+                    <p>Почта: kuznetcovdanil62rus@mail.ru</p>
+                    <p>Адрес: ул. Западная, д.12, к. 8, кв.5</p>
+                    <div class="copyright">2025 © Атрибут</div>
+                </div>
+                <div class="contact-info-right">
+                    <div class="phone-make-footer">
+                        <button class="callback">Заказать звонок</button>
+                        <a class="phone">8-915-621-49-01</a>
+                    </div>
+                    <div class="social-links">
+                        <a href="https://vk.com/kuzma019" class="vk"><img src="pictures/icon2.png" alt="VK"></a>
+                        <a href="https://t.me/Daniil_Kuzma" class="telegram"><img src="pictures/icon1.png" alt="Telegram"></a>
+                        <a href="https://youtube.com/@shrek_boloto?si=5OGE0zkUQXO6nNlM" class="youtube"><img src="pictures/icon3.png" alt="YouTube"></a>
+                        <a href="#" class="discord"><img src="pictures/icon4.png" alt="Discord"></a>
+                        <a href="#" class="tiktok"><img src="pictures/icon5.png" alt="TikTok"></a>
+                    </div>
+                </div>   
+            </div>
+        </footer>
+
+        <!-- Модальное окно товара -->
+        <div class="product-modal" v-if="isModalVisible && selectedProduct" @click.self="closeProductModal">
+            <div class="modal-content">
+                <button class="close-modal" @click="closeProductModal">&times;</button>
+                <div class="modal-body">
+                    <div class="modal-image">
+                        <img :src="selectedProduct.image" :alt="selectedProduct.name">
+                    </div>
+                    <div class="modal-details">
+                        <h2>{{ selectedProduct.name }}</h2>
+                        <p class="modal-price">{{ formatPrice(selectedProduct.price) }}</p>
+                        <div class="modal-tabs">
+                            <button :class="{ active: activeTab === 'Описание' }" @click="activeTab = 'Описание'">Описание</button>
+                            <button :class="{ active: activeTab === 'Состав' }" @click="activeTab = 'Состав'">Состав</button>
+                        </div>
+                        <div class="tab-content">
+                            <div v-if="activeTab === 'Описание'">
+                                <p>{{ selectedProduct.description }}</p>
+                            </div>
+                            <div v-else-if="activeTab === 'Состав'">
+                                <p>{{ selectedProduct.composition }}</p>
+                            </div>
+                        </div>
+                        <button 
+                            class="add-to-cart-modal"
+                            @click="addToCart(selectedProduct.id)"
+                            :disabled="!selectedProduct.inStock">
+                            {{ !selectedProduct.inStock ? 'Нет в наличии' : 'Добавить в корзину' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

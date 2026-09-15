@@ -1,0 +1,10 @@
+// Импорт всех стилей
+@use 'variables' as *;
+@use 'mixins' as *;
+@use 'Атрибут';
+@use 'admin';
+
+// Глобальные стили для скроллбара
+* {
+    @include custom-scrollbar;
+} 

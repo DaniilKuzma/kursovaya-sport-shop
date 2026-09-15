@@ -1,0 +1,13 @@
+my-shop-server/node_modules/
+my-shop-server/.env
+my-shop-server/users.json
+
+# Курсовая записка не относится к исходному коду сайта
+Курсовая работа.docx
+
+# Служебные файлы редакторов и ОС
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+

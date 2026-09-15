@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель администратора</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="header-top">
+                <h1>Панель управления товарами</h1>
+                <button @click="goToMainSite" class="back-button">Вернуться на сайт</button>
+            </div>
+            <div class="header-controls">
+                <button @click="showAddForm = true" class="add-button">Добавить товар</button>
+                <input type="text" v-model="searchQuery" placeholder="Поиск товаров..." class="search-input">
+            </div>
+        </header>
+
+        <!-- Таблица товаров -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Изображение</th>
+                        <th>Название</th>
+                        <th>Цена</th>
+                        <th>Категория</th>
+                        <th>Подкатегория</th>
+                        <th>В наличии</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="product in filteredProducts" :key="product.id">
+                        <td>{{ product.id }}</td>
+                        <td><img :src="product.image" :alt="product.name"></td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ formatPrice(product.price) }}</td>
+                        <td>{{ product.category }}</td>
+                        <td>{{ product.subcategory }}</td>
+                        <td>
+                            <input type="checkbox" v-model="product.inStock" @change="updateProduct(product)">
+                        </td>
+                        <td class="actions">
+                            <button @click="editProduct(product)" class="edit-button">Редактировать</button>
+                            <button @click="deleteProduct(product.id)" class="delete-button">Удалить</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Модальное окно добавления товара -->
+        <div v-if="showAddForm" class="modal">
+            <div class="modal-content">
+                <h2 class="modal-title">Добавить новый товар</h2>
+                <form @submit.prevent="addProduct">
+                    <div class="form-group">
+                        <label>Название:</label>
+                        <input type="text" v-model="newProduct.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Цена:</label>
+                        <input type="number" v-model="newProduct.price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Категория:</label>
+                        <select v-model="newProduct.category" required>
+                            <option v-for="category in categories" :key="category">{{ category }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group" v-if="newProduct.category === 'Протеин'">
+                        <label>Подкатегория:</label>
+                        <select v-model="newProduct.subcategory" required>
+                            <option v-for="subcategory in proteinSubcategories" :key="subcategory">{{ subcategory }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Изображение (путь):</label>
+                        <input type="text" v-model="newProduct.image" required>
+                    </div>
+                    <div class="form-group">
+                        <label>В наличии:</label>
+                        <input type="checkbox" v-model="newProduct.inStock">
+                    </div>
+                    <div class="form-group">
+                        <label>Описание:</label>
+                        <textarea v-model="newProduct.description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Состав:</label>
+                        <textarea v-model="newProduct.composition" rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-button">Сохранить</button>
+                        <button type="button" @click="showAddForm = false" class="cancel-button">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно редактирования товара -->
+        <div v-if="showEditForm" class="modal">
+            <div class="modal-content">
+                <h2 class="modal-title">Редактировать товар</h2>
+                <form @submit.prevent="saveEdit">
+                    <div class="form-group">
+                        <label>Название:</label>
+                        <input type="text" v-model="editingProduct.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Цена:</label>
+                        <input type="number" v-model="editingProduct.price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Категория:</label>
+                        <select v-model="editingProduct.category" required>
+                            <option v-for="category in categories" :key="category">{{ category }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group" v-if="editingProduct.category === 'Протеин'">
+                        <label>Подкатегория:</label>
+                        <select v-model="editingProduct.subcategory" required>
+                            <option v-for="subcategory in proteinSubcategories" :key="subcategory">{{ subcategory }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Изображение (путь):</label>
+                        <input type="text" v-model="editingProduct.image" required>
+                    </div>
+                    <div class="form-group">
+                        <label>В наличии:</label>
+                        <input type="checkbox" v-model="editingProduct.inStock">
+                    </div>
+                    <div class="form-group">
+                        <label>Описание:</label>
+                        <textarea v-model="editingProduct.description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Состав:</label>
+                        <textarea v-model="editingProduct.composition" rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-button">Сохранить</button>
+                        <button type="button" @click="showEditForm = false" class="cancel-button">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="admin.js"></script>
+</body>
+</html> 
